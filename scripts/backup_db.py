@@ -174,4 +174,19 @@ def main() -> int:
             pass
 
         print("[ERROR] pg_dump завершился с ошибкой:", file=sys.stderr)
-        if proc.s
+        if proc.stderr:
+            print(proc.stderr, file=sys.stderr)
+        print(
+            "[INFO] Убедись, что контейнер 'db' запущен и переменные окружения"
+            " указаны корректно.",
+            file=sys.stderr,
+        )
+        return 1
+
+    print("[OK] Бэкап успешно создан.")
+    print("[INFO] Можно скопировать файл из папки backups/ для хранения вне сервера.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

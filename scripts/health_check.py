@@ -129,3 +129,40 @@ def main() -> int:
         compose_cmd = find_compose_command()
         print(f"[OK] Используем команду для compose: {' '.join(compose_cmd)}")
     except RuntimeError as e:
+        print(f"[ERROR] {e}", file=sys.stderr)
+        return 1
+
+    # Показываем статус контейнеров (docker compose ps)
+    try:
+        print("[INFO] Проверяю статус контейнеров (docker compose ps)...")
+        ps_result = subprocess.run(
+            [*compose_cmd, "ps"],
+            cwd=root_dir,
+            text=True,
+        )
+        if ps_result.returncode != 0:
+            print(
+                "[WARN] Команда docker compose ps завершилась с ошибкой. "
+                "Убедись, что Docker запущен и compose-файл корректный.",
+                file=sys.stderr,
+            )
+    except FileNotFoundError as e:
+        print(
+            f"[ERROR] Не удалось выполнить docker compose ps: {e}",
+            file=sys.stderr,
+        )
+        return 1
+    except Exception as e:
+        print(
+            f"[ERROR] Неожиданная ошибка при проверке docker compose ps: {e}",
+            file=sys.stderr,
+        )
+        return 1
+
+    print("[INFO] Если контейнеры не запущены, выполни: docker compose up -d")
+    print("[OK] Проверки завершены. Ошибок не обнаружено.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
