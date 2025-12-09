@@ -1,0 +1,88 @@
+version: "3.9"
+
+# docker-compose.yml
+# Основной compose-файл для запуска Wiki.js + PostgreSQL + Nginx.
+# Хранится в репозитории viking-rise-wiki-infra.
+# Все чувствительные данные вынесены в .env (не коммитим).
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: wikijs-postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Используем переменные из .env, чтобы не хардкодить секреты
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB}"
+    volumes:
+      # Данные БД живут в папке data/db рядом с проектом
+      - ./data/db:/var/lib/postgresql/data
+    networks:
+      - wikinet
+    healthcheck:
+      # Health-check БД: проверяем доступность через pg_isready
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  wiki:
+    image: requarks/wiki:2
+    container_name: wikijs-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      # Тип БД
+      DB_TYPE: postgres
+      # Хост и порт БД внутри docker-сети
+      DB_HOST: db
+      DB_PORT: 5432
+      # Данные доступа к БД из .env
+      DB_USER: "${POSTGRES_USER}"
+      DB_PASS: "${POSTGRES_PASSWORD}"
+      DB_NAME: "${POSTGRES_DB}"
+      # Язык интерфейса по умолчанию (можно изменить в админке)
+      TZ: "Europe/Amsterdam"
+    volumes:
+      # Данные Wiki.js (файлы, загрузки и т.п.)
+      - ./data/wiki:/var/wiki/data
+    networks:
+      - wikinet
+    expose:
+      # Открываем порт только внутри сети; наружу отдаёт Nginx
+      - "3000"
+    healthcheck:
+      # Health-check Wiki.js: простой HTTP-запрос к корню приложения
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: wikijs-nginx
+    restart: unless-stopped
+    depends_on:
+      wiki:
+        condition: service_started
+    ports:
+      # Публикуем HTTP-порт наружу (значение берётся из .env)
+      - "${PUBLIC_HTTP_PORT}:80"
+    volumes:
+      # Основной конфиг nginx
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Конфиги виртуальных хостов
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    networks:
+      - wikinet
+
+networks:
+  wikinet:
+    driver: bridge
