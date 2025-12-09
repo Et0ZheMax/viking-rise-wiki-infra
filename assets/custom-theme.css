@@ -1,0 +1,312 @@
+/*
+ * Custom CSS for Viking Rise Wiki.js theme.
+ * Вставьте содержимое в Administration → Look & Feel → Custom CSS.
+ * Палитра и компоненты соответствуют рекомендациям из docs/design-notes.md.
+ */
+
+:root {
+  --vr-bg: #0e1116; /* основной фон */
+  --vr-surface: #171c24; /* фон карточек/секций */
+  --vr-surface-muted: #1f2833; /* альтернативный фон, удобно для баннеров */
+  --vr-accent: #d9a441; /* золото — основной акцент */
+  --vr-accent-secondary: #4fb0c6; /* бирюза — ссылки/подсветка */
+  --vr-text: #f3f4f6; /* основной текст */
+  --vr-text-muted: #9ca3af; /* подсказки/лейблы */
+  --vr-shadow: 0 16px 30px rgba(0, 0, 0, 0.35);
+  --vr-border: rgba(217, 164, 65, 0.35);
+  --vr-radius: 12px;
+  --vr-section-gap: 28px;
+  --vr-banner-bg: linear-gradient(135deg, rgba(23, 28, 36, 0.95), rgba(15, 18, 24, 0.92));
+}
+
+/* Базовые стили страницы */
+body {
+  background: radial-gradient(circle at 20% 20%, rgba(79, 176, 198, 0.06), transparent 25%),
+    radial-gradient(circle at 80% 0%, rgba(217, 164, 65, 0.08), transparent 30%),
+    var(--vr-bg);
+  color: var(--vr-text);
+  font-family: "Inter", "Segoe UI", sans-serif;
+  line-height: 1.7;
+}
+
+main,
+.content,
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Заголовки — лёгкий трекинг и акцентное подчёркивание */
+h1,
+h2,
+h3 {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+h1 {
+  color: var(--vr-accent);
+  font-weight: 700;
+}
+
+h2,
+h3 {
+  color: var(--vr-accent-secondary);
+  font-weight: 650;
+}
+
+p,
+li {
+  color: var(--vr-text);
+}
+
+p.lead {
+  font-size: 1.125rem;
+  color: var(--vr-text-muted);
+}
+
+/* Ссылки и кнопки */
+a {
+  color: var(--vr-accent-secondary);
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+a:hover {
+  color: var(--vr-accent);
+  text-shadow: 0 0 12px rgba(217, 164, 65, 0.35);
+}
+
+.vr-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f0d58b, #d9a441);
+  color: #0c0c0c;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 10px 25px rgba(217, 164, 65, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vr-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(217, 164, 65, 0.45);
+}
+
+.vr-button--ghost {
+  background: transparent;
+  color: var(--vr-accent);
+  border: 1px solid var(--vr-accent);
+  box-shadow: none;
+}
+
+/* Карточки и секции */
+.vr-section {
+  margin: var(--vr-section-gap) 0;
+  padding: 24px;
+  background: var(--vr-surface);
+  border: 1px solid var(--vr-border);
+  border-radius: var(--vr-radius);
+  box-shadow: var(--vr-shadow);
+}
+
+.vr-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.vr-card {
+  background: var(--vr-surface);
+  border: 1px solid var(--vr-border);
+  border-radius: var(--vr-radius);
+  overflow: hidden;
+  box-shadow: var(--vr-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vr-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+}
+
+.vr-card__media img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.vr-card__body {
+  padding: 18px;
+}
+
+.vr-card__title {
+  margin: 0 0 8px;
+  color: var(--vr-accent);
+  font-weight: 700;
+}
+
+.vr-card__meta {
+  color: var(--vr-text-muted);
+  font-size: 0.9rem;
+}
+
+/* Таблицы и списки */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  background: var(--vr-surface);
+  border: 1px solid var(--vr-border);
+  border-radius: var(--vr-radius);
+  overflow: hidden;
+}
+
+table thead {
+  background: rgba(217, 164, 65, 0.08);
+  color: var(--vr-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+table th,
+table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+table tr:nth-child(even) {
+  background: rgba(79, 176, 198, 0.03);
+}
+
+/* Блоки с кодом */
+pre,
+code {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+pre {
+  padding: 12px 14px;
+  overflow-x: auto;
+}
+
+code {
+  padding: 2px 4px;
+}
+
+/* Баннеры (совместно с docs/banner-placements.md) */
+.vr-banner {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 16px;
+  align-items: center;
+  background: var(--vr-banner-bg);
+  border: 1px solid var(--vr-border);
+  border-radius: 16px;
+  box-shadow: var(--vr-shadow);
+  padding: 18px;
+  overflow: hidden;
+}
+
+.vr-banner--wide {
+  grid-template-columns: 1fr 0.85fr;
+}
+
+.vr-banner--inline {
+  grid-template-columns: 1fr auto;
+  background: var(--vr-surface-muted);
+}
+
+.vr-banner--sidebar {
+  grid-template-columns: 1fr;
+  background: var(--vr-surface);
+}
+
+.vr-banner__body {
+  display: grid;
+  gap: 8px;
+}
+
+.vr-banner__label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--vr-text-muted);
+  margin: 0;
+}
+
+.vr-banner__title {
+  color: var(--vr-accent);
+  margin: 0;
+}
+
+.vr-banner__text {
+  color: var(--vr-text);
+  margin: 0;
+}
+
+.vr-banner__media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+}
+
+.vr-banner img.vr-banner__media {
+  display: block;
+}
+
+/* Эффекты наведения для картинок и CTA */
+.vr-banner img:hover,
+.vr-card__media img:hover {
+  transform: scale(1.02);
+  transition: transform 0.25s ease;
+}
+
+/* Хлебные крошки, навигация, сайдбар */
+.breadcrumb,
+.navbar,
+.sidebar {
+  background: rgba(15, 18, 24, 0.8);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+}
+
+.sidebar a {
+  color: var(--vr-text-muted);
+}
+
+.sidebar a:hover {
+  color: var(--vr-accent);
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+  .vr-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .vr-section,
+  main,
+  .content,
+  .container {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .vr-button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .vr-card__media img {
+    height: 160px;
+  }
+}
