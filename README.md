@@ -50,3 +50,20 @@ viking-rise-wiki-infra/
 └─ data/
    ├─ db/                    # Данные PostgreSQL (volume, в Git не входит)
    └─ wiki/                  # Данные Wiki.js (volume, в Git не входит)
+
+---
+
+## Быстрый запуск (Windows / WSL / Linux)
+
+1. Подготовить переменные окружения:
+   - Скопируй `.env.example` → `.env` и задай собственные значения `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `PUBLIC_HTTP_PORT`.
+2. Запустить инфраструктуру:
+   - `docker compose up -d`
+3. Проверить базовые зависимости и директории:
+   - `sudo python scripts/health_check.py` (или PowerShell/CMD «От имени администратора» на Windows).
+4. Создать резервную копию БД (после первого запуска БД):
+   - `sudo python scripts/backup_db.py`
+5. Зайти в Wiki.js:
+   - По умолчанию доступно на `http://localhost:<PUBLIC_HTTP_PORT>` (значение из `.env`).
+
+> Скрипты требуют прав администратора/root, т.к. обращаются к Docker и создают служебные каталоги.
