@@ -31,6 +31,12 @@
 
 ---
 
+## Документация
+
+- [Базовая настройка Wiki.js через веб-интерфейс](docs/wiki-setup.md)
+
+---
+
 ## Структура репозитория (основное)
 
 ```text
@@ -47,6 +53,8 @@ viking-rise-wiki-infra/
 ├─ scripts/
 │  ├─ health_check.py        # Health-check инфраструктуры (Python)
 │  └─ backup_db.py           # Резервное копирование БД (Python)
+├─ docs/
+│  └─ wiki-setup.md          # Пошаговая настройка Wiki.js через веб-интерфейс
 ├─ backups/                  # Сюда складываются дампы БД (игнорируется Git)
 └─ data/
    ├─ db/                    # Данные PostgreSQL (volume, в Git не входит)
