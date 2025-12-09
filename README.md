@@ -1,20 +1,52 @@
 # viking-rise-wiki-infra
 
-Инфраструктура для Wiki-сайта по игре **Viking Rise** на базе **Wiki.js**.
+Инфраструктура для wiki-сайта по игре **Viking Rise** на базе **Wiki.js**.
 
-## Состав
+> Этот репозиторий отвечает **только за инфраструктуру** (Docker, БД, Nginx, скрипты), а не за контент самой wiki.
 
-- `docker-compose.yml` — запуск Wiki.js + PostgreSQL + Nginx.
-- `.env.example` — пример настроек окружения. Реальный `.env` **не коммитим**.
-- `nginx/` — конфигурация Nginx, который проксирует трафик к Wiki.js.
-- `data/` — данные БД и Wiki.js (volumes).
-- `scripts/health_check.sh` — health-check инфраструктуры.
-- `scripts/backup_db.sh` — резервное копирование БД.
+---
 
-## Быстрый старт
+## Цели проекта
 
-1. Клонировать репозиторий:
+- Развернуть **Wiki.js** с PostgreSQL и Nginx.
+- Обеспечить удобный и стабильный запуск на **Windows (через Docker Desktop)** и на Linux/WSL.
+- Добавить полезные скрипты:
+  - health-check инфраструктуры,
+  - резервное копирование БД.
+- Подготовить основу для дальнейшей настройки:
+  - цветовая схема и стили под Viking Rise,
+  - места под рекламные баннеры,
+  - документация по структуре контента и ролям редакторов.
 
-   ```bash
-   git clone <url> viking-rise-wiki-infra
-   cd viking-rise-wiki-infra
+---
+
+## Технологии
+
+- **Docker + Docker Compose**
+- **PostgreSQL 15 (alpine)**
+- **Wiki.js v2**
+- **Nginx (alpine)**
+- **Python 3** (служебные скрипты)
+- ОС: основная рабочая среда — **Windows + Docker Desktop**, с прицелом на совместимость с Linux/WSL.
+
+---
+
+## Структура репозитория (основное)
+
+```text
+viking-rise-wiki-infra/
+├─ README.md                 # Общее описание проекта
+├─ AGENTS.md                 # Инструкции для ИИ-агентов (Codex и др.)
+├─ .gitignore                # Исключения из Git
+├─ .env.example              # Пример переменных окружения (реальный .env не коммитим)
+├─ docker-compose.yml        # Запуск Wiki.js + PostgreSQL + Nginx
+├─ nginx/
+│  ├─ nginx.conf             # Базовый конфиг Nginx
+│  └─ conf.d/
+│     └─ wiki.conf           # Виртуальный хост для Wiki.js
+├─ scripts/
+│  ├─ health_check.py        # Health-check инфраструктуры (Python)
+│  └─ backup_db.py           # Резервное копирование БД (Python)
+└─ data/
+   ├─ db/                    # Данные PostgreSQL (volume, в Git не входит)
+   └─ wiki/                  # Данные Wiki.js (volume, в Git не входит)
