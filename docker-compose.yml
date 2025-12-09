@@ -4,6 +4,7 @@ version: "3.9"
 # Основной compose-файл для запуска Wiki.js + PostgreSQL + Nginx.
 # Хранится в репозитории viking-rise-wiki-infra.
 # Все чувствительные данные вынесены в .env (не коммитим).
+# Пошаговый запуск описан в README.md.
 
 services:
   db:
@@ -36,6 +37,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
+        # Wiki.js стартует только после того, как PostgreSQL прошёл health-check.
     env_file:
       - .env
     environment:
@@ -59,8 +61,9 @@ services:
       # Открываем порт только внутри сети; наружу отдаёт Nginx
       - "3000"
     healthcheck:
-      # Health-check Wiki.js: простой HTTP-запрос к корню приложения
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      # Health-check Wiki.js: быстрый HTTP-запрос к корню приложения.
+      # Если понадобятся кастомные пробы — можно заменить на curl с проверкой заголовков.
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:3000/ || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10
@@ -71,7 +74,8 @@ services:
     restart: unless-stopped
     depends_on:
       wiki:
-        condition: service_started
+        # Nginx запускается только после того, как Wiki.js принял HTTP-запросы.
+        condition: service_healthy
     ports:
       # Публикуем HTTP-порт наружу (значение берётся из .env)
       - "${PUBLIC_HTTP_PORT}:80"
