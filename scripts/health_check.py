@@ -17,6 +17,7 @@ import subprocess
 import platform
 from pathlib import Path
 import shutil
+from urllib import error, request
 
 
 def is_admin() -> bool:
@@ -36,6 +37,31 @@ def is_admin() -> bool:
     except Exception:
         # Если по какой-то причине не удалось проверить — считаем, что не админ
         return False
+
+
+def load_env_vars(env_path: Path) -> dict:
+    """
+    Простейший парсер .env:
+    - интересуемся только PUBLIC_HTTP_PORT для HTTP-проверки Nginx.
+    - игнорируем пустые строки и комментарии.
+    Возвращаем словарь переменных, если файл найден и корректен.
+    """
+    values: dict = {}
+
+    if not env_path.is_file():
+        return values
+
+    with env_path.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" not in line:
+                continue
+            key, val = line.split("=", 1)
+            values[key.strip()] = val.strip()
+
+    return values
 
 
 def find_compose_command() -> list:
@@ -76,37 +102,86 @@ def find_compose_command() -> list:
     )
 
 
+def check_http_endpoint(url: str) -> bool:
+    """
+    Делает быстрый HTTP-запрос к Nginx.
+    Возвращает True, если ответ с кодом < 400.
+    Любая ошибка соединения/HTTP приведёт к False, но не оборвёт выполнение.
+    """
+
+    try:
+        with request.urlopen(url, timeout=5) as response:
+            return response.status < 400
+    except error.HTTPError as http_err:
+        print(
+            f"[WARN] HTTP {http_err.code} от {url}. "
+            "Проверь, что Nginx и Wiki.js подняты и отдают контент.",
+            file=sys.stderr,
+        )
+    except error.URLError as url_err:
+        print(
+            f"[WARN] Не удалось подключиться к {url}: {url_err.reason}. "
+            "Проверь docker compose up и порты.",
+            file=sys.stderr,
+        )
+    except Exception as e:
+        print(
+            f"[WARN] Неожиданная ошибка при HTTP-проверке {url}: {e}",
+            file=sys.stderr,
+        )
+
+    return False
+
+
 def main() -> int:
+    status_counters = {"OK": 0, "WARN": 0, "ERROR": 0}
+
+    def log(level: str, message: str) -> None:
+        """
+        Упрощённый логгер, чтобы в конце показать сводку статусов.
+        INFO считаем информацией, а OK/WARN/ERROR учитываем в подсчёте.
+        """
+
+        target = sys.stderr if level in ("ERROR", "WARN") else sys.stdout
+        print(f"[{level}] {message}", file=target)
+        if level in status_counters:
+            status_counters[level] += 1
+
     # Проверяем права администратора / root
     if not is_admin():
-        print("[ERROR] Скрипт должен выполняться от имени администратора.", file=sys.stderr)
+        log("ERROR", "Скрипт должен выполняться от имени администратора.")
         if os.name == "nt":
-            print("        Запусти терминал (PowerShell / CMD) 'От имени администратора' и повтори.", file=sys.stderr)
+            log(
+                "WARN",
+                "Запусти терминал (PowerShell / CMD) 'От имени администратора' и повтори.",
+            )
         else:
-            print("        Запусти: sudo python scripts/health_check.py", file=sys.stderr)
+            log("WARN", "Запусти: sudo python scripts/health_check.py")
         return 1
 
     print("=== Health-check viking-rise-wiki-infra ===")
-    print(f"[INFO] OS: {platform.system()} {platform.release()}")
+    log("INFO", f"OS: {platform.system()} {platform.release()}")
 
     # Корень проекта — две директории выше относительно текущего файла
     root_dir = Path(__file__).resolve().parents[1]
-    print(f"[INFO] Корень проекта: {root_dir}")
+    log("INFO", f"Корень проекта: {root_dir}")
 
     # Проверяем наличие docker-compose.yml
     compose_file = root_dir / "docker-compose.yml"
     if not compose_file.is_file():
-        print("[ERROR] Не найден docker-compose.yml в корне проекта.", file=sys.stderr)
+        log("ERROR", "Не найден docker-compose.yml в корне проекта.")
         return 1
-    print("[OK] Найден docker-compose.yml")
+    log("OK", "Найден docker-compose.yml")
 
     # Проверяем .env (не обязательно, но полезно)
     env_file = root_dir / ".env"
+    env_vars = load_env_vars(env_file)
+
     if not env_file.is_file():
-        print("[WARN] Файл .env не найден.")
-        print("       Создай его из .env.example и заполни своими значениями.")
+        log("WARN", "Файл .env не найден.")
+        log("WARN", "Создай его из .env.example и заполни своими значениями.")
     else:
-        print("[OK] Найден .env")
+        log("OK", "Найден .env")
 
     # Проверяем/создаём папки data/db и data/wiki
     db_dir = root_dir / "data" / "db"
@@ -114,53 +189,80 @@ def main() -> int:
 
     for folder in (db_dir, wiki_dir):
         if not folder.exists():
-            print(f"[WARN] Папка {folder} отсутствует, создаю...")
+            log("WARN", f"Папка {folder} отсутствует, создаю...")
             try:
                 folder.mkdir(parents=True, exist_ok=True)
-                print(f"[OK] Папка {folder} создана.")
+                log("OK", f"Папка {folder} создана.")
             except Exception as e:
-                print(f"[ERROR] Не удалось создать папку {folder}: {e}", file=sys.stderr)
+                log("ERROR", f"Не удалось создать папку {folder}: {e}")
                 return 1
         else:
-            print(f"[OK] Папка {folder} существует.")
+            log("OK", f"Папка {folder} существует.")
 
     # Определяем команду для compose
     try:
         compose_cmd = find_compose_command()
-        print(f"[OK] Используем команду для compose: {' '.join(compose_cmd)}")
+        log("OK", f"Используем команду для compose: {' '.join(compose_cmd)}")
     except RuntimeError as e:
-        print(f"[ERROR] {e}", file=sys.stderr)
+        log("ERROR", str(e))
         return 1
 
     # Показываем статус контейнеров (docker compose ps)
     try:
-        print("[INFO] Проверяю статус контейнеров (docker compose ps)...")
+        log("INFO", "Проверяю статус контейнеров (docker compose ps)...")
         ps_result = subprocess.run(
             [*compose_cmd, "ps"],
             cwd=root_dir,
             text=True,
         )
         if ps_result.returncode != 0:
-            print(
-                "[WARN] Команда docker compose ps завершилась с ошибкой. "
+            log(
+                "WARN",
+                "Команда docker compose ps завершилась с ошибкой. "
                 "Убедись, что Docker запущен и compose-файл корректный.",
-                file=sys.stderr,
             )
     except FileNotFoundError as e:
-        print(
-            f"[ERROR] Не удалось выполнить docker compose ps: {e}",
-            file=sys.stderr,
-        )
+        log("ERROR", f"Не удалось выполнить docker compose ps: {e}")
         return 1
     except Exception as e:
-        print(
-            f"[ERROR] Неожиданная ошибка при проверке docker compose ps: {e}",
-            file=sys.stderr,
+        log("ERROR", f"Неожиданная ошибка при проверке docker compose ps: {e}")
+        return 1
+
+    # HTTP-проверка Nginx, чтобы убедиться, что Wiki.js доступен снаружи контейнеров
+    public_port = env_vars.get("PUBLIC_HTTP_PORT", "80")
+    target_url = f"http://localhost:{public_port}"
+    log(
+        "INFO",
+        "Пробую HTTP-запрос к Nginx (ожидается 200/302). "
+        f"URL: {target_url}",
+    )
+
+    if check_http_endpoint(target_url):
+        log("OK", "Nginx отвечает на внешний порт. Wiki.js должен быть доступен.")
+    else:
+        log(
+            "WARN",
+            "HTTP-проверка не подтвердила доступность Nginx. "
+            "Убедись, что контейнеры запущены и PUBLIC_HTTP_PORT открыт.",
+        )
+
+    log("INFO", "Если контейнеры не запущены, выполни: docker compose up -d")
+
+    if status_counters["ERROR"]:
+        log(
+            "ERROR",
+            "Проверка завершилась с ошибками. Исправь их и повтори запуск скрипта.",
         )
         return 1
 
-    print("[INFO] Если контейнеры не запущены, выполни: docker compose up -d")
-    print("[OK] Проверки завершены. Ошибок не обнаружено.")
+    log("OK", "Проверки завершены. Критических ошибок не обнаружено.")
+    log(
+        "INFO",
+        "Сводка: "
+        f"OK={status_counters['OK']}, "
+        f"WARN={status_counters['WARN']}, "
+        f"ERROR={status_counters['ERROR']}",
+    )
     return 0
 
 

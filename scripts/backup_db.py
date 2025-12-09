@@ -8,9 +8,11 @@
 #  - Создаёт папку backups/ в корне проекта.
 #  - Вызывает pg_dump внутри контейнера db через docker compose exec -T.
 #  - Сохраняет дамп в файл вида wikijs_db_YYYYMMDD_HHMMSS.sql.
+#  - Ведёт логи в консоль и logs/backup.log, удаляя старые записи по мере ротации.
 #
-# Лог выводится в консоль.
+# Лог выводится в консоль и в файл logs/backup.log.
 
+import logging
 import os
 import sys
 import subprocess
@@ -98,6 +100,56 @@ def load_env_vars(env_path: Path) -> dict:
     return values
 
 
+def setup_logger(log_dir: Path) -> logging.Logger:
+    """
+    Готовим логгер с выводом в консоль и файл logs/backup.log.
+    Логи помогают отследить успешные и неуспешные попытки бэкапа.
+    """
+
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / "backup.log"
+
+    logger = logging.getLogger("backup_db")
+    if logger.handlers:
+        return logger
+
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+
+    file_handler = logging.FileHandler(log_file, encoding="utf-8")
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+
+    return logger
+
+
+def rotate_backups(backups_dir: Path, keep_last: int, logger: logging.Logger) -> None:
+    """
+    Простая ротация: оставляем только keep_last свежих бэкапов.
+    Остальные аккуратно удаляем с логированием, чтобы не копить гигабайты.
+    """
+
+    backup_files = sorted(
+        backups_dir.glob("wikijs_db_*.sql"),
+        key=lambda file_path: file_path.stat().st_mtime,
+        reverse=True,
+    )
+
+    if len(backup_files) <= keep_last:
+        return
+
+    for obsolete_file in backup_files[keep_last:]:
+        try:
+            obsolete_file.unlink()
+            logger.info("Удалён старый бэкап: %s", obsolete_file)
+        except Exception as e:
+            logger.warning("Не удалось удалить %s: %s", obsolete_file, e)
+
+
 def main() -> int:
     # Проверка прав
     if not is_admin():
@@ -108,17 +160,18 @@ def main() -> int:
             print("        Запусти: sudo python scripts/backup_db.py", file=sys.stderr)
         return 1
 
-    print("=== Резервное копирование БД Wiki.js ===")
-    print(f"[INFO] OS: {platform.system()} {platform.release()}")
-
     root_dir = Path(__file__).resolve().parents[1]
-    print(f"[INFO] Корень проекта: {root_dir}")
+    logger = setup_logger(root_dir / "logs")
+
+    logger.info("=== Резервное копирование БД Wiki.js ===")
+    logger.info("OS: %s %s", platform.system(), platform.release())
+    logger.info("Корень проекта: %s", root_dir)
 
     env_path = root_dir / ".env"
     try:
         env_vars = load_env_vars(env_path)
     except (FileNotFoundError, ValueError) as e:
-        print(f"[ERROR] {e}", file=sys.stderr)
+        logger.error("%s", e)
         return 1
 
     postgres_user = env_vars["POSTGRES_USER"]
@@ -128,21 +181,21 @@ def main() -> int:
     backups_dir = root_dir / "backups"
     try:
         backups_dir.mkdir(parents=True, exist_ok=True)
-        print(f"[OK] Папка для бэкапов: {backups_dir}")
+        logger.info("Папка для бэкапов: %s", backups_dir)
     except Exception as e:
-        print(f"[ERROR] Не удалось создать папку для бэкапов: {e}", file=sys.stderr)
+        logger.error("Не удалось создать папку для бэкапов: %s", e)
         return 1
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     backup_file = backups_dir / f"wikijs_db_{timestamp}.sql"
-    print(f"[INFO] Файл бэкапа: {backup_file}")
+    logger.info("Файл бэкапа: %s", backup_file)
 
     # Ищем docker compose / docker-compose
     try:
         compose_cmd = find_compose_command()
-        print(f"[OK] Используем команду для compose: {' '.join(compose_cmd)}")
+        logger.info("Используем команду для compose: %s", " ".join(compose_cmd))
     except RuntimeError as e:
-        print(f"[ERROR] {e}", file=sys.stderr)
+        logger.error("%s", e)
         return 1
 
     # Команда pg_dump внутри контейнера db:
@@ -159,10 +212,10 @@ def main() -> int:
                 text=True,
             )
     except FileNotFoundError as e:
-        print(f"[ERROR] Не удалось запустить docker compose: {e}", file=sys.stderr)
+        logger.error("Не удалось запустить docker compose: %s", e)
         return 1
     except Exception as e:
-        print(f"[ERROR] Неожиданная ошибка при выполнении pg_dump: {e}", file=sys.stderr)
+        logger.error("Неожиданная ошибка при выполнении pg_dump: %s", e)
         return 1
 
     if proc.returncode != 0:
@@ -173,18 +226,20 @@ def main() -> int:
         except Exception:
             pass
 
-        print("[ERROR] pg_dump завершился с ошибкой:", file=sys.stderr)
+        logger.error("pg_dump завершился с ошибкой")
         if proc.stderr:
-            print(proc.stderr, file=sys.stderr)
-        print(
-            "[INFO] Убедись, что контейнер 'db' запущен и переменные окружения"
-            " указаны корректно.",
-            file=sys.stderr,
+            logger.error(proc.stderr)
+        logger.info(
+            "Убедись, что контейнер 'db' запущен и переменные окружения указаны корректно."
         )
         return 1
 
-    print("[OK] Бэкап успешно создан.")
-    print("[INFO] Можно скопировать файл из папки backups/ для хранения вне сервера.")
+    logger.info("Бэкап успешно создан.")
+
+    # Простая ротация, по умолчанию оставляем 10 последних бэкапов
+    rotate_backups(backups_dir, keep_last=10, logger=logger)
+
+    logger.info("Можно скопировать файл из папки backups/ для хранения вне сервера.")
     return 0
 
 
