@@ -2,7 +2,7 @@
 title: Мобилизация Племен
 description: 
 published: true
-date: 2026-02-09T12:29:30.448Z
+date: 2026-02-09T12:29:47.905Z
 tags: viking rise, viking rise; викинг райс, события, мобилизация племен, tribe mobilization, клан, развитие, награды
 editor: markdown
 dateCreated: 2026-02-09T12:27:48.356Z
