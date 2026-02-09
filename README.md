@@ -34,6 +34,7 @@
 ## Документация
 
 - [Базовая настройка Wiki.js через веб-интерфейс](docs/wiki-setup.md)
+- [Docker-образ и запуск Wiki.js](docs/docker-image.md)
 
 ---
 
