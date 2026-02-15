@@ -19,8 +19,9 @@ services:
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
       POSTGRES_DB: "${POSTGRES_DB}"
     volumes:
-      # Данные БД живут в папке data/db рядом с проектом
-      - ./data/db:/var/lib/postgresql/data
+      # Именованный volume: данные БД переживают перезапуск и пересоздание контейнера.
+      # ВАЖНО: не использовать `docker compose down -v`, иначе volume будет удалён.
+      - db_data:/var/lib/postgresql/data
     networks:
       - wikinet
     healthcheck:
@@ -53,13 +54,14 @@ services:
       # Язык интерфейса по умолчанию (можно изменить в админке)
       TZ: "Europe/Amsterdam"
     volumes:
-      # Данные Wiki.js (файлы, загрузки и т.п.)
-      - ./data/wiki:/var/wiki/data
+      # Именованный volume для локальных файлов Wiki.js (uploads, кэш и т.п.).
+      # Основной контент страниц хранится в PostgreSQL (db_data).
+      - wiki_data:/wiki/data
     networks:
       - wikinet
     expose:
       # Открываем порт только внутри сети; наружу отдаёт Nginx
-      - "3009"
+      - "3000"
     healthcheck:
       # Health-check Wiki.js: быстрый HTTP-запрос к корню приложения.
       # Если понадобятся кастомные пробы — можно заменить на curl с проверкой заголовков.
@@ -90,3 +92,9 @@ services:
 networks:
   wikinet:
     driver: bridge
+
+volumes:
+  # Постоянные Docker volumes для данных приложения.
+  # Они не зависят от рабочей директории проекта и лучше подходят для Windows + Docker Desktop.
+  db_data:
+  wiki_data:
