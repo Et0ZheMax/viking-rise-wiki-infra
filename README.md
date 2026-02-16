@@ -37,6 +37,7 @@
 
 - [Базовая настройка Wiki.js через веб-интерфейс](docs/wiki-setup.md)
 - [Docker-образ и запуск Wiki.js](docs/docker-image.md)
+- [Шаблон домашней страницы (меню тем и подтем)](docs/homepage-menu.md)
 
 ---
 
