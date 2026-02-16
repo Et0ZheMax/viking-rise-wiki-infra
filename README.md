@@ -4,6 +4,8 @@
 
 > Этот репозиторий отвечает **только за инфраструктуру** (Docker, БД, Nginx, скрипты), а не за контент самой wiki.
 
+> Контент страниц wiki хранится в отдельной ветке `content-pages`, чтобы инфраструктурные изменения не смешивались с текстами статей.
+
 ---
 
 ## Цели проекта
@@ -57,9 +59,9 @@ viking-rise-wiki-infra/
 ├─ docs/
 │  └─ wiki-setup.md          # Пошаговая настройка Wiki.js через веб-интерфейс
 ├─ backups/                  # Сюда складываются дампы БД (игнорируется Git)
-└─ data/
-   ├─ db/                    # Данные PostgreSQL (volume, в Git не входит)
-   └─ wiki/                  # Данные Wiki.js (volume, в Git не входит)
+
+> Постоянные данные контейнеров хранятся в именованных Docker volumes (`db_data`, `wiki_data`).
+> Это защищает wiki-контент от потери при перезапуске/пересоздании контейнеров.
 
 ---
 
@@ -81,11 +83,11 @@ viking-rise-wiki-infra/
    - На Windows можно использовать PowerShell: `Copy-Item .env.example .env`.
 2. **Запустить инфраструктуру**
    - Выполните `docker compose up -d` из корня репозитория.
-   - При первом запуске будут созданы каталоги `data/db` и `data/wiki` для volume-данных.
+   - При первом запуске Docker создаст volumes `db_data` и `wiki_data` автоматически.
 3. **Проверить окружение скриптом health-check**
    - Linux/WSL: `sudo python scripts/health_check.py`
    - Windows: запустите PowerShell/Command Prompt «От имени администратора» и выполните `py scripts\health_check.py`.
-   - Скрипт убедится, что Docker доступен, `.env` найден, а каталоги `data/` созданы.
+   - Скрипт убедится, что Docker доступен и `.env` найден.
 4. **Создать резервную копию БД (после инициализации Wiki.js)**
    - Linux/WSL: `sudo python scripts/backup_db.py`
    - Windows (администратор): `py scripts\backup_db.py`
@@ -96,6 +98,7 @@ viking-rise-wiki-infra/
 6. **Остановить/перезапустить**
    - Остановить: `docker compose down`
    - Перезапустить после изменения конфигов: `docker compose up -d --force-recreate`
+   - ⚠️ Не запускайте `docker compose down -v`, если нужно сохранить страницы wiki и БД.
 
 > Скрипты проверяют права и выводят понятные сообщения на русском. Если Docker или Compose недоступны, сначала исправьте окружение, затем повторите запуск.
 
@@ -103,8 +106,8 @@ viking-rise-wiki-infra/
 
 ## Состав сервисов docker-compose
 
-- **db** — PostgreSQL 15 (alpine). Данные хранятся в `./data/db`. Health-check использует `pg_isready`.
-- **wiki** — Wiki.js v2. Использует БД `db` и хранит загрузки в `./data/wiki`. Health-check — HTTP-запрос к приложению.
+- **db** — PostgreSQL 15 (alpine). Данные хранятся в Docker volume `db_data`. Health-check использует `pg_isready`.
+- **wiki** — Wiki.js v2. Использует БД `db` и хранит локальные файлы в Docker volume `wiki_data`. Health-check — HTTP-запрос к приложению.
 - **nginx** — reverse-proxy, публикует порт из переменной `PUBLIC_HTTP_PORT`. Конфигурация лежит в `nginx/`.
 
 > Все чувствительные данные берутся из `.env`; сам файл в Git не коммитим.
