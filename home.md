@@ -2,17 +2,13 @@
 title: 1
 description: 1
 published: true
-date: 2026-02-23T21:47:24.044Z
+date: 2026-02-23T21:52:48.993Z
 tags: 
 editor: markdown
 dateCreated: 2026-02-23T19:50:36.896Z
 ---
 
-<!-- =========================
-  Viking Rise Wiki — Premium Home
-  Repo/Branch: wiki-pages (content only)
-  Root: EtoZheWiki/
-========================= -->
+
 
 <div class="vr-hero">
   <div class="vr-hero__content">
