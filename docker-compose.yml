@@ -1,5 +1,3 @@
-version: "3.9"
-
 # docker-compose.yml
 # Основной compose-файл для запуска Wiki.js + PostgreSQL + Nginx.
 # Хранится в репозитории viking-rise-wiki-infra.
@@ -24,11 +22,11 @@ services:
       - db_data:/var/lib/postgresql/data
     networks:
       - wikinet
-    # Принудительно запускаем PostgreSQL на внутреннем порту из диапазона 20000-39999.
-    command: ["postgres", "-p", "25432"]
     healthcheck:
       # Health-check БД: проверяем доступность через pg_isready
-      test: ["CMD-SHELL", "pg_isready -p 25432 -U ${POSTGRES_USER} -d ${POSTGRES_DB} || exit 1"]
+      # Используем стандартный порт PostgreSQL внутри контейнера (5432),
+      # чтобы избежать расхождений с дефолтными настройками клиентов.
+      test: ["CMD-SHELL", "pg_isready -p 5432 -U ${POSTGRES_USER} -d ${POSTGRES_DB} || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -48,15 +46,13 @@ services:
       DB_TYPE: postgres
       # Хост и порт БД внутри docker-сети
       DB_HOST: db
-      DB_PORT: 25432
+      DB_PORT: 5432
       # Данные доступа к БД из .env
       DB_USER: "${POSTGRES_USER}"
       DB_PASS: "${POSTGRES_PASSWORD}"
       DB_NAME: "${POSTGRES_DB}"
       # Язык интерфейса по умолчанию (можно изменить в админке)
       TZ: "Europe/Amsterdam"
-      # Внутренний HTTP-порт Wiki.js внутри docker-сети (диапазон 20000-39999)
-      PORT: 23000
     volumes:
       # Именованный volume для локальных файлов Wiki.js (uploads, кэш и т.п.).
       # Основной контент страниц хранится в PostgreSQL (db_data).
@@ -65,11 +61,12 @@ services:
       - wikinet
     expose:
       # Открываем порт только внутри сети; наружу отдаёт Nginx
-      - "23000"
+      # Wiki.js v2 использует порт 3000 по умолчанию.
+      - "3000"
     healthcheck:
       # Health-check Wiki.js: быстрый HTTP-запрос к корню приложения.
       # Если понадобятся кастомные пробы — можно заменить на curl с проверкой заголовков.
-      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:23000', r => process.exit(r.statusCode >= 200 && r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000', r => process.exit(r.statusCode >= 200 && r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))\""]
       interval: 15s
       timeout: 5s
       retries: 10
