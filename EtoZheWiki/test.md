@@ -2,7 +2,7 @@
 title: Untitled Page
 description: 
 published: true
-date: 2026-02-23T22:20:26.650Z
+date: 2026-02-23T22:23:26.910Z
 tags: 
 editor: markdown
 dateCreated: 2026-02-23T22:18:59.645Z
@@ -11,12 +11,14 @@ dateCreated: 2026-02-23T22:18:59.645Z
 <div class="vr-hero">
   <div class="vr-hero-left">
     <div class="vr-badge">EtoZheWiki</div>
+
     <h1>Viking Rise Wiki</h1>
-    <p>
+
+    <p class="vr-sub">
       Полная база знаний по Viking Rise: герои, PvP, события, экономика и развитие города.
     </p>
 
-   <div class="vr-actions">
+    <div class="vr-actions">
       <a href="/Начало-игры" class="vr-btn vr-primary">Начать с нуля</a>
       <a href="/Герои" class="vr-btn">Герои</a>
       <a href="/События" class="vr-btn">События</a>
@@ -24,10 +26,11 @@ dateCreated: 2026-02-23T22:18:59.645Z
     </div>
   </div>
 
-   <div class="vr-hero-right">
+  <div class="vr-hero-right">
     <div class="vr-panel">
       <div class="vr-panel-title">Быстрый доступ</div>
-      <div class="vr-pills">
+
+      <div class="vr-panel-links">
         <a href="/Бой" class="vr-pill">⚔️ PvP</a>
         <a href="/Гайды/Навигация" class="vr-pill">🧭 Навигация</a>
         <a href="/События" class="vr-pill">🎯 Ивенты</a>
