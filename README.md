@@ -93,7 +93,7 @@ viking-rise-wiki-infra/
    - Windows (администратор): `py scripts\backup_db.py`
    - Дамп сохраняется в `backups/wikijs_db_YYYYMMDD_HHMMSS.sql` (папка игнорируется Git).
 5. **Открыть Wiki.js**
-   - По умолчанию: `http://localhost:<PUBLIC_HTTP_PORT>` из `.env` (например, `http://localhost:8080`).
+   - По умолчанию: `http://localhost:<PUBLIC_HTTP_PORT>` из `.env` (например, `http://localhost:28080`).
    - Первоначальная настройка admin-аккаунта выполняется через веб-интерфейс Wiki.js.
 6. **Остановить/перезапустить**
    - Остановить: `docker compose down`

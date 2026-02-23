@@ -229,7 +229,7 @@ def main() -> int:
         return 1
 
     # HTTP-проверка Nginx, чтобы убедиться, что Wiki.js доступен снаружи контейнеров
-    public_port = env_vars.get("PUBLIC_HTTP_PORT", "80")
+    public_port = env_vars.get("PUBLIC_HTTP_PORT", "28080")
     target_url = f"http://localhost:{public_port}"
     log(
         "INFO",
