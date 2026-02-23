@@ -2,7 +2,7 @@
 title: Untitled Page
 description: 
 published: true
-date: 2026-02-23T22:18:59.645Z
+date: 2026-02-23T22:19:59.459Z
 tags: 
 editor: markdown
 dateCreated: 2026-02-23T22:18:59.645Z
@@ -16,7 +16,7 @@ dateCreated: 2026-02-23T22:18:59.645Z
       Полная база знаний по Viking Rise: герои, PvP, события, экономика и развитие города.
     </p>
 
-    <div class="vr-actions">
+   <div class="vr-actions">
       <a href="/Начало-игры" class="vr-btn vr-primary">Начать с нуля</a>
       <a href="/Герои" class="vr-btn">Герои</a>
       <a href="/События" class="vr-btn">События</a>
@@ -24,7 +24,7 @@ dateCreated: 2026-02-23T22:18:59.645Z
     </div>
   </div>
 
-  <div class="vr-hero-right">
+   <div class="vr-hero-right">
     <div class="vr-panel">
       <div class="vr-panel-title">Быстрый доступ</div>
       <div class="vr-pills">
