@@ -1,8 +1,8 @@
 ---
-title: EtoZheWiki - первая ультимативная wiki по игре Viking Rise
-description: EtoZheWiki
+title: EtoZheWiki
+description: EtoZheWiki - первая ультимативная wiki по игре Viking Rise
 published: true
-date: 2026-02-23T22:14:13.842Z
+date: 2026-02-23T22:15:26.420Z
 tags: 
 editor: markdown
 dateCreated: 2026-02-23T19:50:36.896Z
